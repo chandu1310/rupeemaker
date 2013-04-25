@@ -37,7 +37,7 @@ public class StockTile extends JPanel implements Runnable {
 		this.colorProfile = colorProfile;
 		buildUI();
 		execService = Executors.newSingleThreadScheduledExecutor();
-		execService.scheduleAtFixedRate(this, 5, 10, TimeUnit.SECONDS);		
+		execService.scheduleAtFixedRate(this, 5, 30, TimeUnit.SECONDS);		
 	}
 	
 	

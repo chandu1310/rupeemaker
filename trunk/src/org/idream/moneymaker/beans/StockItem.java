@@ -77,8 +77,4 @@ public class StockItem implements Serializable {
 		this.stockDate = stockDate;
 	}	
 	
-	@Override
-	public String toString() {
-		return stockCode+" - "+stockName;
-	}
 }
