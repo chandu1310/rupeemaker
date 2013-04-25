@@ -7,24 +7,25 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Calendar;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
 import org.idream.moneymaker.beans.AppSession;
 import org.idream.moneymaker.beans.ChangeRequestItem;
 import org.idream.moneymaker.beans.StockItem;
 import org.idream.moneymaker.beans.SuggestionItem;
 import org.idream.moneymaker.thirdparty.WrapLayout;
+import org.idream.moneymaker.ui.runnables.AddNewStockItem;
 import org.idream.moneymaker.util.ChangeRequestUtil;
 import org.idream.moneymaker.util.CommonUtil;
 
@@ -259,11 +260,6 @@ public final class UIBuilder {
 			JWhitePanel changerequestCommandsPanel = new JWhitePanel(new FlowLayout(FlowLayout.RIGHT));
 			{
 				JButton addStockToRequestBtn = new JButton("Add");
-				addStockToRequestBtn.addActionListener(new ActionListener() {
-					public void actionPerformed(ActionEvent arg0) {
-						 
-					}
-				});
 				changerequestCommandsPanel.add(addStockToRequestBtn);
 
 				JButton saveRequestBtn = new JButton("Save");
@@ -296,43 +292,5 @@ public final class UIBuilder {
 		
 		return changeRequestPanel;
 	}	
-	
-	private static ChangeRequestItem showNewRequestItemDialog(){		
-		
-		JComboBox<StockItem> code = new JComboBox<StockItem>(AppSession.profile.getPortFolio().getStocks());
-		
-		ButtonGroup transType = new ButtonGroup();
-		JRadioButton buy = new JRadioButton("Buy"), sell = new JRadioButton("Sell");
-		transType.add(sell); transType.add(buy); 
-		sell.setSelected(true);
-		
-		JTextField units = new JTextField();
-		JTextField price = new JTextField();
-		 
-		final JComponent[] inputs = new JComponent[] {
-				new JLabel("Code"),
-				code,
-				sell,
-				buy,
-				new JLabel("Units"),
-				units,
-				new JLabel("Price"),
-				price
-		};
-		
-		
-		while(
-			(code.getSelectedItem() == null) ||
-			(units.getText()==null || "".equals(units.getText())) ||
-			(price.getText()==null || "".equals(price.getText()))  
-		){
-			JOptionPane.showMessageDialog(null, inputs, "Change Details", JOptionPane.PLAIN_MESSAGE);				
-		}
-		
-		ChangeRequestItem item = new ChangeRequestItem("NSE", "INFY", "Infosys Technologies", 100, 1234.50f, Calendar.getInstance().getTime(), false, "BUY");
-		
-		return item;
-	}
-
 	
 }
