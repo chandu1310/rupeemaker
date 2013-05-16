@@ -6,13 +6,12 @@ import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Vector;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.idream.moneymaker.net.StockPublisher;
 import org.idream.moneymaker.net.StockPublisherFactory;
 import org.idream.moneymaker.ui.UIHookPoints;
-import org.idream.moneymaker.util.StockTicker;
+import org.idream.moneymaker.util.ChangeRequestUtil;
 
 public class AppSession {
 	public static Profile profile;
@@ -52,6 +51,7 @@ public class AppSession {
 				profile = (Profile)o;
 			}
 			ois.close();	
+			ChangeRequestUtil.requests = profile.getRequests();
 			return true;
 		}
 		catch(Exception er){

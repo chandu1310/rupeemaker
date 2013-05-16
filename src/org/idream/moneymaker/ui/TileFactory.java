@@ -7,7 +7,11 @@ import org.idream.moneymaker.beans.SuggestionItem;
 public final class TileFactory {
 	
 	public static RequestTile getChangeRequestItemTile(ChangeRequestItem item){
-		RequestTile ui = new RequestTile(item, UserInterfaceUtilities.getBgColorForTile());	
+		RequestTile ui;
+		if(	"BUY".equalsIgnoreCase(item.getTransaction()) )
+			ui = new RequestTile(item, UserInterfaceUtilities.BUY_TILE_COLOR);
+		else
+			ui = new RequestTile(item, UserInterfaceUtilities.SELL_TILE_COLOR);			
 		return ui;
 	}
 	

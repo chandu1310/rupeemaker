@@ -1,6 +1,7 @@
 package org.idream.moneymaker.beans;
 
 import java.io.Serializable;
+import java.util.Vector;
 
 
 public class Profile implements Serializable {
@@ -10,7 +11,7 @@ public class Profile implements Serializable {
 	private Portfolio portFolio;
 	private String fileName;
 	
-	private ChangeRequest requests;
+	private Vector<ChangeRequest> requests = new Vector<ChangeRequest>();
 	
 	public Profile(String fileName){
 		this.fileName = fileName;
@@ -42,10 +43,12 @@ public class Profile implements Serializable {
 	public String getFileName() {
 		return fileName;
 	}
-	public ChangeRequest getRequests() {
+	
+	public Vector<ChangeRequest> getRequests() {
 		return requests;
 	}
-	public void setRequests(ChangeRequest requests) {
+	public void setRequests(Vector<ChangeRequest> requests) {
 		this.requests = requests;
-	}	
+	}
+	
 }

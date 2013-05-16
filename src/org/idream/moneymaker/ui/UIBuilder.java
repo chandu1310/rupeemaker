@@ -6,7 +6,10 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.Calendar;
+import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.BoxLayout;
@@ -21,6 +24,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
 import org.idream.moneymaker.beans.AppSession;
+import org.idream.moneymaker.beans.ChangeRequest;
 import org.idream.moneymaker.beans.ChangeRequestItem;
 import org.idream.moneymaker.beans.StockItem;
 import org.idream.moneymaker.beans.SuggestionItem;
@@ -29,7 +33,8 @@ import org.idream.moneymaker.ui.runnables.AddNewStockItem;
 import org.idream.moneymaker.util.ChangeRequestUtil;
 import org.idream.moneymaker.util.CommonUtil;
 
-public final class UIBuilder {
+public final class UIBuilder {	
+	
 	public static JWhitePanel buildContentPanel(){
 		JWhitePanel contentPanel = new JWhitePanel(new BorderLayout());		
 		
@@ -135,15 +140,15 @@ public final class UIBuilder {
 							//Show a dialog for new stock details
 							newItem = showNewStockItemDialog();
 							
-							AppSession.shutdownTicker();
-							
-							
-							//Add the new stock item to vector.
-							AppSession.profile.getPortFolio().addStockItem(newItem);							
-							AppSession.ui.currentStocksPanel.add( TileFactory.getCurrentStockTile(newItem) );
-							AppSession.ui.currentStocksPanel.validate(); 
-							AppSession.ui.currentStocksPanel.repaint(); 
-							AppSession.ui.investmentValueLabel.setText(CommonUtil.formatToCurrency(AppSession.profile.getPortFolio().getInvestedAmount()));
+							if(newItem != null){
+								AppSession.shutdownTicker();						
+								//Add the new stock item to vector.
+								AppSession.profile.getPortFolio().addStockItem(newItem);							
+								AppSession.ui.currentStocksPanel.add( TileFactory.getCurrentStockTile(newItem) );
+								AppSession.ui.currentStocksPanel.validate(); 
+								AppSession.ui.currentStocksPanel.repaint(); 
+								AppSession.ui.investmentValueLabel.setText(CommonUtil.formatToCurrency(AppSession.profile.getPortFolio().getInvestedAmount()));
+							}
 						}
 							
 					});
@@ -193,21 +198,27 @@ public final class UIBuilder {
 		};
 		
 		
+		boolean cancelled = false;
 		while(
 			(code.getText()==null || "".equals(code.getText())) ||
 			(name.getText()==null || "".equals(name.getText())) ||
 			(units.getText()==null || "".equals(units.getText())) ||
 			(price.getText()==null || "".equals(price.getText()))  
 		){
-			JOptionPane.showMessageDialog(null, inputs, "New Stock Details", JOptionPane.PLAIN_MESSAGE);				
+			Object o = JOptionPane.showInputDialog(null, inputs, "New Stock Details", JOptionPane.PLAIN_MESSAGE);
+			if(o==null){
+				cancelled = true;
+				break;
+			}
 		}
 		
-		StockItem item = new StockItem("NSE", code.getText(), name.getText(), Integer.parseInt(units.getText()), Float.parseFloat(price.getText()), Calendar.getInstance().getTime());
+		StockItem item = null;
+		if(!cancelled)
+		item = new StockItem("NSE", code.getText(), name.getText(), Integer.parseInt(units.getText()), Float.parseFloat(price.getText()), Calendar.getInstance().getTime());
 		
 		return item;
 	}
 	
-
 	public static JWhitePanel buildCurrentInvestmentsPanel() {
 
 		JWhitePanel currentInvestmentsPanel = new JWhitePanel(new BorderLayout());	
@@ -243,6 +254,7 @@ public final class UIBuilder {
 	}
 	
 	public static JWhitePanel buildChangeRequestsPanel() {
+		String[] savedChangesArray;
 		JWhitePanel changeRequestPanel = new JWhitePanel(new BorderLayout());
 		
 		JWhitePanel changeSelectionPanel = new JWhitePanel(new FlowLayout(FlowLayout.LEFT)); 
@@ -251,8 +263,20 @@ public final class UIBuilder {
 			{
 				changeSelectionListPanel.add(new JLabel("Select a change: "));
 				
-				String[] savedChangesArray = ChangeRequestUtil.getSavedChanges();				
+				savedChangesArray = ChangeRequestUtil.getChangeRequestNames();				
 				JComboBox savedChangesList = new JComboBox(savedChangesArray);
+				savedChangesList.addItemListener(new ItemListener() {					
+					@Override
+					public void itemStateChanged(ItemEvent event) {
+				       if (event.getStateChange() == ItemEvent.SELECTED) {
+				           Object item = event.getItem();
+				           displayChangeRequestItems();
+				        }						
+					}
+				});
+				savedChangesList.setSelectedIndex(0);
+				
+				AppSession.ui.savedChangesList = savedChangesList;
 				changeSelectionListPanel.add(savedChangesList);
 			}
 			changeSelectionPanel.add(changeSelectionListPanel);	
@@ -260,19 +284,61 @@ public final class UIBuilder {
 			JWhitePanel changerequestCommandsPanel = new JWhitePanel(new FlowLayout(FlowLayout.RIGHT));
 			{
 				JButton addStockToRequestBtn = new JButton("Add");
+				addStockToRequestBtn.addActionListener(new ActionListener() {					
+					@Override
+					public void actionPerformed(ActionEvent arg0) {						
+						ChangeRequestItem newItem = null;
+						
+						//Show a dialog for new stock details
+						newItem = showChangeRequestItemDetails();
+						
+						if(newItem != null){
+							//Add the new item to the changerequest currently selected.
+							String selectedChange = (String)AppSession.ui.savedChangesList.getSelectedItem();
+							ChangeRequest req = ChangeRequestUtil.getChangeRequest(selectedChange);
+							req.addChangeRequestItem(newItem);
+							displayChangeRequestItems();
+						}
+					}
+				});
 				changerequestCommandsPanel.add(addStockToRequestBtn);
 
-				JButton saveRequestBtn = new JButton("Save");
+				JButton saveRequestBtn = new JButton("Save As");
+				saveRequestBtn.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent arg0) {		
+						Object o = JOptionPane.showInputDialog(null, "New ChangeRequest", JOptionPane.PLAIN_MESSAGE);
+						
+						if(o==null)
+							return;
+						
+						String n = (String)o;
+						ChangeRequestUtil.saveDefaultAsNew(n);
+						
+						AppSession.ui.savedChangesList.removeAllItems();
+						for(String s: ChangeRequestUtil.getChangeRequestNames())
+							AppSession.ui.savedChangesList.addItem(s);
+						
+						AppSession.ui.savedChangesList.setSelectedIndex(0);
+						AppSession.saveState();
+					}
+				});
 				changerequestCommandsPanel.add(saveRequestBtn);
 				
 				JButton reviewRequestBtn = new JButton("Review");
 				changerequestCommandsPanel.add(reviewRequestBtn);
+
+				JButton resetRequestBtn = new JButton("Reset");
+				resetRequestBtn.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						ChangeRequestUtil.resetCurrentSelectedRequest();
+						displayChangeRequestItems();
+					}
+				});
+				changerequestCommandsPanel.add(resetRequestBtn);
 				
 				JButton submitRequestBtn = new JButton("Submit");
 				changerequestCommandsPanel.add(submitRequestBtn);
 				
-				JButton resetRequestBtn = new JButton("Reset");
-				changerequestCommandsPanel.add(resetRequestBtn);
 			}
 			changeSelectionPanel.add(changerequestCommandsPanel);		
 		
@@ -280,17 +346,64 @@ public final class UIBuilder {
 		changeRequestPanel.add(changeSelectionPanel, BorderLayout.NORTH);
 		
 		JWhitePanel requestStocksPanel = new JWhitePanel(new WrapLayout(FlowLayout.LEFT,10,10));
-		{
-			for(int i=1; i<=10; i++)
-			{
-				ChangeRequestItem item = new ChangeRequestItem("NSE", "INFY", "Infosys Technologies", 100, 1234.50f, Calendar.getInstance().getTime(), false, "BUY");
-				RequestTile tile = TileFactory.getChangeRequestItemTile(item); 
-				requestStocksPanel.add(tile);
-			}
-		}
+		AppSession.ui.requestStocksPanel = requestStocksPanel;
 		changeRequestPanel.add(new JScrollPane(requestStocksPanel), BorderLayout.CENTER);	
+		displayChangeRequestItems();
 		
 		return changeRequestPanel;
-	}	
+	}
 	
+	public static void displayChangeRequestItems(){
+		String selectedChange = (String)AppSession.ui.savedChangesList.getSelectedItem();
+		ChangeRequest request = ChangeRequestUtil.getChangeRequest(selectedChange);
+		Vector<ChangeRequestItem> items = request.getChangesList();
+		JWhitePanel requestStocksPanel = AppSession.ui.requestStocksPanel;
+		requestStocksPanel.removeAll();
+		requestStocksPanel.setLayout(new WrapLayout(FlowLayout.LEFT,10,10));
+		for(ChangeRequestItem item: items)
+		{			
+			RequestTile tile = TileFactory.getChangeRequestItemTile(item); 
+			requestStocksPanel.add(tile);
+		}		
+		requestStocksPanel.validate();
+		requestStocksPanel.repaint();
+	}
+	
+	private static ChangeRequestItem showChangeRequestItemDetails(){
+		JTextField transaction = new JTextField();
+		JTextField code = new JTextField();		
+		JTextField units = new JTextField();
+		JTextField price = new JTextField();
+		
+		final JComponent[] inputs = new JComponent[] {
+				new JLabel("Transaction"),
+				transaction,
+				new JLabel("Code"),
+				code,
+				new JLabel("Units"),
+				units,
+				new JLabel("Price"),
+				price
+		};
+		
+		
+		boolean cancelled = false;
+		while(
+			(transaction.getText()==null || "".equals(transaction.getText())) ||
+			(code.getText()==null || "".equals(code.getText())) ||			
+			(units.getText()==null || "".equals(units.getText())) ||
+			(price.getText()==null || "".equals(price.getText()))  
+		){
+			Object o = JOptionPane.showInputDialog(null, inputs, "Change Item Details", JOptionPane.PLAIN_MESSAGE);
+			if(o==null){
+				cancelled = true;
+				break;
+			}
+		}
+		
+		ChangeRequestItem item = null;
+		if(!cancelled)
+		item = new ChangeRequestItem("NSE", code.getText(), Integer.parseInt(units.getText()), Float.parseFloat(price.getText()), transaction.getText());		
+		return item;
+	}	
 }

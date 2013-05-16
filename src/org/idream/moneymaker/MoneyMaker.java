@@ -4,7 +4,9 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.GridLayout;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -17,14 +19,15 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
 
 import org.idream.moneymaker.beans.AppSession;
+import org.idream.moneymaker.beans.ChangeRequest;
 import org.idream.moneymaker.beans.Portfolio;
 import org.idream.moneymaker.beans.Profile;
 import org.idream.moneymaker.beans.StockItem;
 import org.idream.moneymaker.ui.JWhitePanel;
 import org.idream.moneymaker.ui.UIBuilder;
+import org.idream.moneymaker.util.ChangeRequestUtil;
 import org.idream.moneymaker.util.ProfileHandler;
 
 public class MoneyMaker {
@@ -56,6 +59,11 @@ public class MoneyMaker {
 			}
 		});
 		appWindow.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+//		Toolkit tk = Toolkit.getDefaultToolkit();  
+//		int xSize = ((int) tk.getScreenSize().getWidth());  
+//		int ySize = ((int) tk.getScreenSize().getHeight());  
+		appWindow.setSize(800,600);
+		appWindow.setExtendedState(Frame.MAXIMIZED_BOTH);
 		appWindow.setVisible(true);
 	}
 
@@ -113,7 +121,6 @@ public class MoneyMaker {
 		}
 		co.add(mainPanel);
 
-		appWindow.setSize(800, 600);
 		// appWindow.setResizable(false);
 		co.validate();
 		co.repaint();
@@ -150,13 +157,19 @@ public class MoneyMaker {
 			pf.setStocks(stocks);
 		}		
 		
+		ChangeRequest defaultRequest = new ChangeRequest();{
+			defaultRequest.setRequestName("Default");
+		}
+		
 		Profile prof = new Profile("apptest.mm");
 		{
 			prof.setUserid("chandu"); 
 			prof.setUsername("Chandrashekar Chennamsetty"); 
 			prof.setPassword("password"); 
 			prof.setPortFolio(pf);
+			prof.getRequests().add(defaultRequest);			
 		}
 		AppSession.profile = prof;
+		ChangeRequestUtil.requests = prof.getRequests();
 	}
 }
