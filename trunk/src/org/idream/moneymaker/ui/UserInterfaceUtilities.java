@@ -20,4 +20,7 @@ public class UserInterfaceUtilities {
 		nextColor = (nextColor+1)%tileColors.length;
 		return c;
 	}
+	
+	public static TileColorProfile BUY_TILE_COLOR =  TileColorProfile.BLUE;
+	public static TileColorProfile SELL_TILE_COLOR = TileColorProfile.RED;
 }
